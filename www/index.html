@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Canvas2D</title>
+    <style>
+      html,
+      body,
+      canvas {
+        margin: 0px;
+        padding: 0px;
+        height: 100%;
+        width: 100%;
+        background: black;
+        color: white;
+        position: absolute;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="loading">Loading</div>
+    <canvas id="canvas"></canvas>
+  </body>
+  <script>
+    const canvas = document.getElementById("canvas");
+    const loading = document.getElementById("loading");
+    const ctx = canvas.getContext("2d");
+
+    const importObject = {
+      env: {
+        debug: (arg) => {
+          console.log(arg);
+        },
+        draw_line: (x1, y1, x2, y2) => {
+          ctx.strokeStyle = "white";
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+        },
+      },
+    };
+
+    // TODO: It was working before
+    function setCanvasDimension() {
+      console.log("change");
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", setCanvasDimension());
+    setCanvasDimension();
+
+    // Loading WASM module
+    WebAssembly.instantiateStreaming(fetch("module.wasm"), importObject).then(
+      (wasmModule) => {
+        // this saves the exported function from WASM module for use in JS
+        loading.remove();
+        canvas.style.visibility = "visible";
+
+        wasm_main = wasmModule.instance.exports.main;
+        console.log(wasmModule.instance.exports);
+        wasm_main();
+
+        function update(fun) {
+          requestAnimationFrame(update);
+          if (typeof fun == "function") {
+            fun();
+          }
+          console.log(typeof fun);
+        }
+
+        update(wasm_main);
+      }
+    );
+  </script>
+</html>
